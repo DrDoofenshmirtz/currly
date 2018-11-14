@@ -120,6 +120,7 @@ type DefinePortStep interface {
 	queryBuilder
 	headerBuilder
 	credentialsBuilder
+	resultExtractorBuilder
 	curlFuncBuilder
 
 	Port(port uint) BuildPathStep
@@ -130,6 +131,7 @@ type BuildPathStep interface {
 	queryBuilder
 	headerBuilder
 	credentialsBuilder
+	resultExtractorBuilder
 	curlFuncBuilder
 }
 
@@ -137,6 +139,7 @@ type BuildQueryStep interface {
 	queryBuilder
 	headerBuilder
 	credentialsBuilder
+	resultExtractorBuilder
 	curlFuncBuilder
 }
 
@@ -174,6 +177,10 @@ type headerBuilder interface {
 
 type credentialsBuilder interface {
 	Credentials(username, password string) BuildCurlFuncStep
+}
+
+type resultExtractorBuilder interface {
+	ResultExtractor(r ResultExtractor) BuildCurlFuncStep
 }
 
 type curlFuncBuilder interface {
@@ -273,6 +280,12 @@ func (ct curlTemplate) Localhost() DefinePortStep {
 	return ct.Host("localhost")
 }
 
+func (ct curlTemplate) Port(port uint) BuildPathStep {
+	ct.urlTemplate.port = port
+
+	return ct
+}
+
 func (ct curlTemplate) PathSegment(name string) BuildPathStep {
 	ct.urlTemplate.path = append(ct.urlTemplate.path, &pathSegment{name})
 
@@ -309,8 +322,8 @@ func (ct curlTemplate) Credentials(username, password string) BuildCurlFuncStep 
 	return ct
 }
 
-func (ct curlTemplate) Port(port uint) BuildPathStep {
-	ct.urlTemplate.port = port
+func (ct curlTemplate) ResultExtractor(r ResultExtractor) BuildCurlFuncStep {
+	ct.resultExtractor = r
 
 	return ct
 }
