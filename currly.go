@@ -2,6 +2,7 @@ package currly
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +14,13 @@ import (
 
 func ClientConnector(c *http.Client) Connector {
 	return clientConnector{c}
+}
+
+func DefaultConnector() Connector {
+	t := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+	c := &http.Client{Transport: t}
+
+	return ClientConnector(c)
 }
 
 func Builder(c Connector) DefineMethodStep {
