@@ -104,17 +104,6 @@ type BuildQueryStep interface {
 	curlFuncBuilder
 }
 
-type AddHeaderStep interface {
-	headerBuilder
-	credentialsBuilder
-	curlFuncBuilder
-}
-
-type AddCredentialsStep interface {
-	credentialsBuilder
-	curlFuncBuilder
-}
-
 type BuildCurlFuncStep interface {
 	curlFuncBuilder
 }
