@@ -108,7 +108,7 @@ type BuildCurlFuncStep interface {
 	curlFuncBuilder
 }
 
-type CurlFunc func(args ...Arg) (interface{}, error)
+type CurlFunc func(args ...Arg) (int, interface{}, error)
 
 type Arg interface {
 	applyTo(ct *curlTemplate) bool
@@ -277,23 +277,23 @@ func (ct curlTemplate) Build() (CurlFunc, error) {
 		return nil, ct.error
 	}
 
-	return CurlFunc(func(args ...Arg) (interface{}, error) {
+	return CurlFunc(func(args ...Arg) (int, interface{}, error) {
 		ct = complete(ct, args)
 
 		if ct.error != nil {
-			return nil, ct.error
+			return 0, nil, ct.error
 		}
 
 		req, err := createRequest(ct)
 
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 
 		resp, err := ct.connector.Send(req)
 
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 
 		defer resp.Body.Close()
@@ -301,17 +301,17 @@ func (ct curlTemplate) Build() (CurlFunc, error) {
 		bs, err := ioutil.ReadAll(resp.Body)
 
 		if err != nil {
-			return nil, err
+			return resp.StatusCode, nil, err
 		}
 
 		buf := new(bytes.Buffer)
 		err = json.Indent(buf, bs, "", "  ")
 
 		if err != nil {
-			return nil, err
+			return resp.StatusCode, nil, err
 		}
 
-		return string(buf.Bytes()), nil
+		return resp.StatusCode, string(buf.Bytes()), nil
 	}), nil
 }
 
