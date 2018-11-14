@@ -51,7 +51,7 @@ func QueryArg(name, value string) Arg {
 	})
 }
 
-func BodyArg(body map[string]interface{}) Arg {
+func BodyArg(body interface{}) Arg {
 	return argFunc(func(ct *curlTemplate) bool {
 		ct.body = body
 
@@ -152,7 +152,7 @@ type curlTemplate struct {
 	urlTemplate urlTemplate
 	header      http.Header
 	credentials *credentials
-	body        map[string]interface{}
+	body        interface{}
 	error       error
 }
 
@@ -349,6 +349,10 @@ func createRequest(ct curlTemplate) (*http.Request, error) {
 
 	r, err = http.NewRequest(ct.method, urlString(ct.urlTemplate), body)
 
+	if body != nil {
+		r.Header.Add("Content-Type", "application/json; charset=utf-8")
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +416,7 @@ func urlString(ut urlTemplate) string {
 	return url
 }
 
-func requestBody(body map[string]interface{}) (io.Reader, error) {
+func requestBody(body interface{}) (io.Reader, error) {
 	if body == nil {
 		return nil, nil
 	}
