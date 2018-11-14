@@ -143,6 +143,17 @@ type BuildQueryStep interface {
 	curlFuncBuilder
 }
 
+type WithHeaderStep interface {
+	credentialsBuilder
+	resultExtractorBuilder
+	curlFuncBuilder
+}
+
+type WithCredentialsStep interface {
+	resultExtractorBuilder
+	curlFuncBuilder
+}
+
 type BuildCurlFuncStep interface {
 	curlFuncBuilder
 }
@@ -172,11 +183,11 @@ type queryBuilder interface {
 }
 
 type headerBuilder interface {
-	Header(header http.Header) BuildCurlFuncStep
+	Header(header http.Header) WithHeaderStep
 }
 
 type credentialsBuilder interface {
-	Credentials(username, password string) BuildCurlFuncStep
+	Credentials(username, password string) WithCredentialsStep
 }
 
 type resultExtractorBuilder interface {
@@ -310,13 +321,13 @@ func (ct curlTemplate) QueryParam(name string) BuildQueryStep {
 	return ct
 }
 
-func (ct curlTemplate) Header(header http.Header) BuildCurlFuncStep {
+func (ct curlTemplate) Header(header http.Header) WithHeaderStep {
 	ct.header = header
 
 	return ct
 }
 
-func (ct curlTemplate) Credentials(username, password string) BuildCurlFuncStep {
+func (ct curlTemplate) Credentials(username, password string) WithCredentialsStep {
 	ct.credentials = credentials{username, password}
 
 	return ct
