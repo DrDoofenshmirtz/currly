@@ -76,6 +76,25 @@ func JSONBodyArg(body interface{}) Arg {
 	})
 }
 
+func JSONStringExtractor() ResultExtractor {
+	return resultExtractorFunc(func(r *http.Response) (interface{}, error) {
+		bs, err := ioutil.ReadAll(r.Body)
+
+		if err != nil {
+			return nil, err
+		}
+
+		buf := new(bytes.Buffer)
+		err = json.Indent(buf, bs, "", "  ")
+
+		if err != nil {
+			return nil, err
+		}
+
+		return string(buf.Bytes()), nil
+	})
+}
+
 type Connector interface {
 	Send(r *http.Request) (*http.Response, error)
 }
@@ -131,6 +150,10 @@ type Arg interface {
 	applyTo(ct *curlTemplate) bool
 }
 
+type ResultExtractor interface {
+	Result(r *http.Response) (interface{}, error)
+}
+
 type clientConnector struct {
 	*http.Client
 }
@@ -164,13 +187,14 @@ type variable interface {
 }
 
 type curlTemplate struct {
-	connector   Connector
-	method      string
-	urlTemplate urlTemplate
-	header      http.Header
-	credentials credentials
-	body        io.ReadCloser
-	error       error
+	connector       Connector
+	method          string
+	urlTemplate     urlTemplate
+	header          http.Header
+	credentials     credentials
+	body            io.ReadCloser
+	resultExtractor ResultExtractor
+	error           error
 }
 
 type urlTemplate struct {
@@ -206,6 +230,8 @@ type credentials struct {
 }
 
 type argFunc func(ct *curlTemplate) bool
+
+type resultExtractorFunc func(r *http.Response) (interface{}, error)
 
 func (cc clientConnector) Send(r *http.Request) (*http.Response, error) {
 	return cc.Do(r)
@@ -315,25 +341,22 @@ func (ct curlTemplate) Build() (CurlFunc, error) {
 
 		defer resp.Body.Close()
 
-		bs, err := ioutil.ReadAll(resp.Body)
+		ret, err := ct.resultExtractor.Result(resp)
 
 		if err != nil {
 			return resp.StatusCode, nil, err
 		}
 
-		buf := new(bytes.Buffer)
-		err = json.Indent(buf, bs, "", "  ")
-
-		if err != nil {
-			return resp.StatusCode, nil, err
-		}
-
-		return resp.StatusCode, string(buf.Bytes()), nil
+		return resp.StatusCode, ret, nil
 	}), nil
 }
 
 func complete(ct curlTemplate, args []Arg) curlTemplate {
 	ct = copyCurlTemplate(ct)
+
+	if ct.resultExtractor == nil {
+		ct.resultExtractor = JSONStringExtractor()
+	}
 
 	for _, a := range args {
 		a.applyTo(&ct)
@@ -485,4 +508,8 @@ func (qp *queryParam) String() string {
 
 func (f argFunc) applyTo(ct *curlTemplate) bool {
 	return f(ct)
+}
+
+func (f resultExtractorFunc) Result(r *http.Response) (interface{}, error) {
+	return f(r)
 }
