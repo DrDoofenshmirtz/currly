@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 )
 
 func ClientConnector(c *http.Client) Connector {
@@ -51,9 +52,25 @@ func QueryArg(name, value string) Arg {
 	})
 }
 
-func BodyArg(body interface{}) Arg {
+func JSONBodyArg(body interface{}) Arg {
+	once := sync.Once{}
+
 	return argFunc(func(ct *curlTemplate) bool {
-		ct.body = body
+		var bs []byte
+		var err error
+
+		once.Do(func() { bs, err = json.Marshal(body) })
+
+		if err != nil {
+			return false
+		}
+
+		if ct.header == nil {
+			ct.header = make(http.Header)
+		}
+
+		ct.header.Set("Content-Type", "application/json; charset=utf-8")
+		ct.body = ioutil.NopCloser(bytes.NewReader(bs))
 
 		return true
 	})
@@ -152,7 +169,7 @@ type curlTemplate struct {
 	urlTemplate urlTemplate
 	header      http.Header
 	credentials credentials
-	body        interface{}
+	body        io.ReadCloser
 	error       error
 }
 
@@ -341,19 +358,7 @@ func copyURLTemplate(ut urlTemplate) urlTemplate {
 var emptyCredentials credentials
 
 func createRequest(ct curlTemplate) (*http.Request, error) {
-	body, err := requestBody(ct.body)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var r *http.Request
-
-	r, err = http.NewRequest(ct.method, urlString(ct.urlTemplate), body)
-
-	if body != nil {
-		r.Header.Add("Content-Type", "application/json; charset=utf-8")
-	}
+	r, err := http.NewRequest(ct.method, urlString(ct.urlTemplate), ct.body)
 
 	if err != nil {
 		return nil, err
@@ -416,20 +421,6 @@ func urlString(ut urlTemplate) string {
 	}
 
 	return url
-}
-
-func requestBody(body interface{}) (io.Reader, error) {
-	if body == nil {
-		return nil, nil
-	}
-
-	bs, err := json.Marshal(body)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes.NewReader(bs), nil
 }
 
 func (ps *pathSegment) varName() string {
