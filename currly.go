@@ -151,7 +151,7 @@ type curlTemplate struct {
 	method      string
 	urlTemplate urlTemplate
 	header      http.Header
-	credentials *credentials
+	credentials credentials
 	body        interface{}
 	error       error
 }
@@ -261,7 +261,7 @@ func (ct curlTemplate) Header(header http.Header) BuildCurlFuncStep {
 }
 
 func (ct curlTemplate) Credentials(username, password string) BuildCurlFuncStep {
-	ct.credentials = &credentials{username, password}
+	ct.credentials = credentials{username, password}
 
 	return ct
 }
@@ -338,6 +338,8 @@ func copyURLTemplate(ut urlTemplate) urlTemplate {
 	return copy
 }
 
+var emptyCredentials credentials
+
 func createRequest(ct curlTemplate) (*http.Request, error) {
 	body, err := requestBody(ct.body)
 
@@ -363,7 +365,7 @@ func createRequest(ct curlTemplate) (*http.Request, error) {
 		}
 	}
 
-	if ct.credentials != nil {
+	if ct.credentials != emptyCredentials {
 		r.SetBasicAuth(ct.credentials.username, ct.credentials.password)
 	}
 
