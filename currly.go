@@ -281,6 +281,10 @@ func (cc clientConnector) Send(r *http.Request) (*http.Response, error) {
 }
 
 func (ct curlTemplate) Method(method string) DefineScheme {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.method = method
 
 	return ct
@@ -295,18 +299,30 @@ func (ct curlTemplate) POST() DefineScheme {
 }
 
 func (ct curlTemplate) HTTP() DefineHost {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.urlTemplate.scheme = "http"
 
 	return ct
 }
 
 func (ct curlTemplate) HTTPS() DefineHost {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.urlTemplate.scheme = "https"
 
 	return ct
 }
 
 func (ct curlTemplate) Host(host string) DefinePort {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.urlTemplate.host = host
 
 	return ct
@@ -317,48 +333,80 @@ func (ct curlTemplate) Localhost() DefinePort {
 }
 
 func (ct curlTemplate) Port(port uint) BuildPath {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.urlTemplate.port = port
 
 	return ct
 }
 
 func (ct curlTemplate) PathSegment(name string) BuildPath {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.urlTemplate.path = append(ct.urlTemplate.path, &pathSegment{name})
 
 	return ct
 }
 
 func (ct curlTemplate) PathParam(name string) BuildPath {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.urlTemplate.path = append(ct.urlTemplate.path, &pathParam{name: name})
 
 	return ct
 }
 
 func (ct curlTemplate) QuerySegment(name, value string) BuildQuery {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.urlTemplate.query = append(ct.urlTemplate.query, &querySegment{name, value})
 
 	return ct
 }
 
 func (ct curlTemplate) QueryParam(name string) BuildQuery {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.urlTemplate.query = append(ct.urlTemplate.query, &queryParam{name: name})
 
 	return ct
 }
 
 func (ct curlTemplate) Header(header http.Header) SetCredentials {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.header = header
 
 	return ct
 }
 
 func (ct curlTemplate) Credentials(username, password string) SetResultExtractor {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.credentials = credentials{username, password}
 
 	return ct
 }
 
 func (ct curlTemplate) ResultExtractor(r ResultExtractor) BuildCurl {
+	if ct.error != nil {
+		return ct
+	}
+
 	ct.resultExtractor = r
 
 	return ct
