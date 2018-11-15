@@ -107,6 +107,18 @@ func PlainStringExtractor() ResultExtractor {
 	})
 }
 
+func BytesExtractor() ResultExtractor {
+	return ResultExtractorFunc(func(r *http.Response) (interface{}, error) {
+		bs, err := ioutil.ReadAll(r.Body)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return bs, nil
+	})
+}
+
 type Connector interface {
 	Send(r *http.Request) (*http.Response, error)
 }
