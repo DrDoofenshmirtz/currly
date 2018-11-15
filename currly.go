@@ -216,6 +216,7 @@ type variable interface {
 	fmt.Stringer
 	varName() string
 	bindTo(value string) bool
+	copy() variable
 }
 
 type curlTemplate struct {
@@ -402,16 +403,40 @@ func complete(ct curlTemplate, args []Arg) curlTemplate {
 }
 
 func copyCurlTemplate(ct curlTemplate) curlTemplate {
-	copy := ct
-	copy.urlTemplate = copyURLTemplate(copy.urlTemplate)
+	ct.urlTemplate = copyURLTemplate(ct.urlTemplate)
+	ct.header = copyHeader(ct.header)
 
-	return copy
+	return ct
+}
+
+func copyHeader(h http.Header) http.Header {
+	hCopy := make(http.Header, len(h))
+
+	for k, v := range h {
+		vCopy := make([]string, len(v))
+
+		copy(vCopy, v)
+		hCopy[k] = vCopy
+	}
+
+	return hCopy
 }
 
 func copyURLTemplate(ut urlTemplate) urlTemplate {
-	copy := ut
+	ut.path = copyVariables(ut.path)
+	ut.query = copyVariables(ut.query)
 
-	return copy
+	return ut
+}
+
+func copyVariables(vs []variable) []variable {
+	vsCopy := make([]variable, len(vs))
+
+	for i, v := range vs {
+		vsCopy[i] = v.copy()
+	}
+
+	return vsCopy
 }
 
 var emptyCredentials credentials
@@ -490,6 +515,10 @@ func (ps *pathSegment) bindTo(value string) bool {
 	return false
 }
 
+func (ps *pathSegment) copy() variable {
+	return ps
+}
+
 func (ps *pathSegment) String() string {
 	return ps.name
 }
@@ -502,6 +531,12 @@ func (pp *pathParam) bindTo(value string) bool {
 	pp.value = value
 
 	return true
+}
+
+func (pp *pathParam) copy() variable {
+	copy := *pp
+
+	return &copy
 }
 
 func (pp *pathParam) String() string {
@@ -520,6 +555,10 @@ func (qs *querySegment) bindTo(value string) bool {
 	return false
 }
 
+func (qs *querySegment) copy() variable {
+	return qs
+}
+
 func (qs *querySegment) String() string {
 	return url.QueryEscape(qs.name) + "=" + url.QueryEscape(qs.value)
 }
@@ -532,6 +571,12 @@ func (qp *queryParam) bindTo(value string) bool {
 	qp.value = value
 
 	return true
+}
+
+func (qp *queryParam) copy() variable {
+	copy := *qp
+
+	return &copy
 }
 
 func (qp *queryParam) String() string {
