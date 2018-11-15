@@ -77,7 +77,7 @@ func JSONBodyArg(body interface{}) Arg {
 }
 
 func JSONStringExtractor() ResultExtractor {
-	return resultExtractorFunc(func(r *http.Response) (interface{}, error) {
+	return ResultExtractorFunc(func(r *http.Response) (interface{}, error) {
 		bs, err := ioutil.ReadAll(r.Body)
 
 		if err != nil {
@@ -168,6 +168,8 @@ type ResultExtractor interface {
 	Result(r *http.Response) (interface{}, error)
 }
 
+type ResultExtractorFunc func(r *http.Response) (interface{}, error)
+
 type clientConnector struct {
 	*http.Client
 }
@@ -248,8 +250,6 @@ type credentials struct {
 }
 
 type argFunc func(ct *curlTemplate) bool
-
-type resultExtractorFunc func(r *http.Response) (interface{}, error)
 
 func (cc clientConnector) Send(r *http.Request) (*http.Response, error) {
 	return cc.Do(r)
@@ -534,6 +534,6 @@ func (f argFunc) applyTo(ct *curlTemplate) bool {
 	return f(ct)
 }
 
-func (f resultExtractorFunc) Result(r *http.Response) (interface{}, error) {
+func (f ResultExtractorFunc) Result(r *http.Response) (interface{}, error) {
 	return f(r)
 }
