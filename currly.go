@@ -116,46 +116,46 @@ type DefineHost interface {
 }
 
 type DefinePort interface {
-	pathBuilder
-	queryBuilder
-	headerBuilder
-	credentialsBuilder
-	resultExtractorBuilder
-	curlFuncBuilder
+	pathPart
+	queryPart
+	headerPart
+	credentialsPart
+	resultExtractorPart
+	curlFuncPart
 
 	Port(port uint) BuildPath
 }
 
 type BuildPath interface {
-	pathBuilder
-	queryBuilder
-	headerBuilder
-	credentialsBuilder
-	resultExtractorBuilder
-	curlFuncBuilder
+	pathPart
+	queryPart
+	headerPart
+	credentialsPart
+	resultExtractorPart
+	curlFuncPart
 }
 
 type BuildQuery interface {
-	queryBuilder
-	headerBuilder
-	credentialsBuilder
-	resultExtractorBuilder
-	curlFuncBuilder
+	queryPart
+	headerPart
+	credentialsPart
+	resultExtractorPart
+	curlFuncPart
 }
 
 type SetCredentials interface {
-	credentialsBuilder
-	resultExtractorBuilder
-	curlFuncBuilder
+	credentialsPart
+	resultExtractorPart
+	curlFuncPart
 }
 
 type SetResultExtractor interface {
-	resultExtractorBuilder
-	curlFuncBuilder
+	resultExtractorPart
+	curlFuncPart
 }
 
 type BuildCurl interface {
-	curlFuncBuilder
+	curlFuncPart
 }
 
 type CurlFunc func(args ...Arg) (int, interface{}, error)
@@ -174,29 +174,29 @@ type clientConnector struct {
 	*http.Client
 }
 
-type pathBuilder interface {
+type pathPart interface {
 	PathSegment(name string) BuildPath
 	PathParam(name string) BuildPath
 }
 
-type queryBuilder interface {
+type queryPart interface {
 	QuerySegment(name, value string) BuildQuery
 	QueryParam(name string) BuildQuery
 }
 
-type headerBuilder interface {
+type headerPart interface {
 	Header(header http.Header) SetCredentials
 }
 
-type credentialsBuilder interface {
+type credentialsPart interface {
 	Credentials(username, password string) SetResultExtractor
 }
 
-type resultExtractorBuilder interface {
+type resultExtractorPart interface {
 	ResultExtractor(r ResultExtractor) BuildCurl
 }
 
-type curlFuncBuilder interface {
+type curlFuncPart interface {
 	Build() (CurlFunc, error)
 }
 
