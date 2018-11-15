@@ -24,7 +24,7 @@ func DefaultConnector() Connector {
 	return ClientConnector(c)
 }
 
-func Builder(c Connector) DefineMethodStep {
+func Builder(c Connector) DefineMethod {
 	return curlTemplate{connector: c}
 }
 
@@ -99,23 +99,23 @@ type Connector interface {
 	Send(r *http.Request) (*http.Response, error)
 }
 
-type DefineMethodStep interface {
-	Method(method string) DefineSchemeStep
-	GET() DefineSchemeStep
-	POST() DefineSchemeStep
+type DefineMethod interface {
+	Method(method string) DefineScheme
+	GET() DefineScheme
+	POST() DefineScheme
 }
 
-type DefineSchemeStep interface {
-	HTTP() DefineHostStep
-	HTTPS() DefineHostStep
+type DefineScheme interface {
+	HTTP() DefineHost
+	HTTPS() DefineHost
 }
 
-type DefineHostStep interface {
-	Host(host string) DefinePortStep
-	Localhost() DefinePortStep
+type DefineHost interface {
+	Host(host string) DefinePort
+	Localhost() DefinePort
 }
 
-type DefinePortStep interface {
+type DefinePort interface {
 	pathBuilder
 	queryBuilder
 	headerBuilder
@@ -123,10 +123,10 @@ type DefinePortStep interface {
 	resultExtractorBuilder
 	curlFuncBuilder
 
-	Port(port uint) BuildPathStep
+	Port(port uint) BuildPath
 }
 
-type BuildPathStep interface {
+type BuildPath interface {
 	pathBuilder
 	queryBuilder
 	headerBuilder
@@ -135,7 +135,7 @@ type BuildPathStep interface {
 	curlFuncBuilder
 }
 
-type BuildQueryStep interface {
+type BuildQuery interface {
 	queryBuilder
 	headerBuilder
 	credentialsBuilder
@@ -143,18 +143,18 @@ type BuildQueryStep interface {
 	curlFuncBuilder
 }
 
-type WithHeaderStep interface {
+type SetCredentials interface {
 	credentialsBuilder
 	resultExtractorBuilder
 	curlFuncBuilder
 }
 
-type WithCredentialsStep interface {
+type SetResultExtractor interface {
 	resultExtractorBuilder
 	curlFuncBuilder
 }
 
-type BuildCurlFuncStep interface {
+type BuildCurl interface {
 	curlFuncBuilder
 }
 
@@ -175,25 +175,25 @@ type clientConnector struct {
 }
 
 type pathBuilder interface {
-	PathSegment(name string) BuildPathStep
-	PathParam(name string) BuildPathStep
+	PathSegment(name string) BuildPath
+	PathParam(name string) BuildPath
 }
 
 type queryBuilder interface {
-	QuerySegment(name, value string) BuildQueryStep
-	QueryParam(name string) BuildQueryStep
+	QuerySegment(name, value string) BuildQuery
+	QueryParam(name string) BuildQuery
 }
 
 type headerBuilder interface {
-	Header(header http.Header) WithHeaderStep
+	Header(header http.Header) SetCredentials
 }
 
 type credentialsBuilder interface {
-	Credentials(username, password string) WithCredentialsStep
+	Credentials(username, password string) SetResultExtractor
 }
 
 type resultExtractorBuilder interface {
-	ResultExtractor(r ResultExtractor) BuildCurlFuncStep
+	ResultExtractor(r ResultExtractor) BuildCurl
 }
 
 type curlFuncBuilder interface {
@@ -255,85 +255,85 @@ func (cc clientConnector) Send(r *http.Request) (*http.Response, error) {
 	return cc.Do(r)
 }
 
-func (ct curlTemplate) Method(method string) DefineSchemeStep {
+func (ct curlTemplate) Method(method string) DefineScheme {
 	ct.method = method
 
 	return ct
 }
 
-func (ct curlTemplate) GET() DefineSchemeStep {
+func (ct curlTemplate) GET() DefineScheme {
 	return ct.Method(http.MethodGet)
 }
 
-func (ct curlTemplate) POST() DefineSchemeStep {
+func (ct curlTemplate) POST() DefineScheme {
 	return ct.Method(http.MethodPost)
 }
 
-func (ct curlTemplate) HTTP() DefineHostStep {
+func (ct curlTemplate) HTTP() DefineHost {
 	ct.urlTemplate.scheme = "http"
 
 	return ct
 }
 
-func (ct curlTemplate) HTTPS() DefineHostStep {
+func (ct curlTemplate) HTTPS() DefineHost {
 	ct.urlTemplate.scheme = "https"
 
 	return ct
 }
 
-func (ct curlTemplate) Host(host string) DefinePortStep {
+func (ct curlTemplate) Host(host string) DefinePort {
 	ct.urlTemplate.host = host
 
 	return ct
 }
 
-func (ct curlTemplate) Localhost() DefinePortStep {
+func (ct curlTemplate) Localhost() DefinePort {
 	return ct.Host("localhost")
 }
 
-func (ct curlTemplate) Port(port uint) BuildPathStep {
+func (ct curlTemplate) Port(port uint) BuildPath {
 	ct.urlTemplate.port = port
 
 	return ct
 }
 
-func (ct curlTemplate) PathSegment(name string) BuildPathStep {
+func (ct curlTemplate) PathSegment(name string) BuildPath {
 	ct.urlTemplate.path = append(ct.urlTemplate.path, &pathSegment{name})
 
 	return ct
 }
 
-func (ct curlTemplate) PathParam(name string) BuildPathStep {
+func (ct curlTemplate) PathParam(name string) BuildPath {
 	ct.urlTemplate.path = append(ct.urlTemplate.path, &pathParam{name: name})
 
 	return ct
 }
 
-func (ct curlTemplate) QuerySegment(name, value string) BuildQueryStep {
+func (ct curlTemplate) QuerySegment(name, value string) BuildQuery {
 	ct.urlTemplate.query = append(ct.urlTemplate.query, &querySegment{name, value})
 
 	return ct
 }
 
-func (ct curlTemplate) QueryParam(name string) BuildQueryStep {
+func (ct curlTemplate) QueryParam(name string) BuildQuery {
 	ct.urlTemplate.query = append(ct.urlTemplate.query, &queryParam{name: name})
 
 	return ct
 }
 
-func (ct curlTemplate) Header(header http.Header) WithHeaderStep {
+func (ct curlTemplate) Header(header http.Header) SetCredentials {
 	ct.header = header
 
 	return ct
 }
 
-func (ct curlTemplate) Credentials(username, password string) WithCredentialsStep {
+func (ct curlTemplate) Credentials(username, password string) SetResultExtractor {
 	ct.credentials = credentials{username, password}
 
 	return ct
 }
 
-func (ct curlTemplate) ResultExtractor(r ResultExtractor) BuildCurlFuncStep {
+func (ct curlTemplate) ResultExtractor(r ResultExtractor) BuildCurl {
 	ct.resultExtractor = r
 
 	return ct
