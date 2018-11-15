@@ -29,40 +29,40 @@ func Builder(c Connector) DefineMethod {
 }
 
 func PathArg(name, value string) Arg {
-	return argFunc(func(ct *curlTemplate) bool {
+	return argFunc(func(ct *curlTemplate) error {
 		for _, v := range ct.urlTemplate.path {
 			if v.varName() == name && v.bindTo(value) {
-				return true
+				return nil
 			}
 		}
 
-		return false
+		return fmt.Errorf("failed to bind value '%v' to URL path parameter '%v'", value, name)
 	})
 }
 
 func QueryArg(name, value string) Arg {
-	return argFunc(func(ct *curlTemplate) bool {
+	return argFunc(func(ct *curlTemplate) error {
 		for _, v := range ct.urlTemplate.query {
 			if v.varName() == name && v.bindTo(value) {
-				return true
+				return nil
 			}
 		}
 
-		return false
+		return fmt.Errorf("failed to bind value '%v' to URL query parameter '%v'", value, name)
 	})
 }
 
 func JSONBodyArg(body interface{}) Arg {
 	once := sync.Once{}
 
-	return argFunc(func(ct *curlTemplate) bool {
+	return argFunc(func(ct *curlTemplate) error {
 		var bs []byte
 		var err error
 
 		once.Do(func() { bs, err = json.Marshal(body) })
 
 		if err != nil {
-			return false
+			return err
 		}
 
 		if ct.header == nil {
@@ -72,7 +72,7 @@ func JSONBodyArg(body interface{}) Arg {
 		ct.header.Set("Content-Type", "application/json; charset=utf-8")
 		ct.body = ioutil.NopCloser(bytes.NewReader(bs))
 
-		return true
+		return nil
 	})
 }
 
@@ -173,7 +173,7 @@ type BuildCurl interface {
 type CurlFunc func(args ...Arg) (int, interface{}, error)
 
 type Arg interface {
-	applyTo(ct *curlTemplate) bool
+	applyTo(ct *curlTemplate) error
 }
 
 type ResultExtractor interface {
@@ -262,7 +262,7 @@ type credentials struct {
 	password string
 }
 
-type argFunc func(ct *curlTemplate) bool
+type argFunc func(ct *curlTemplate) error
 
 func (cc clientConnector) Send(r *http.Request) (*http.Response, error) {
 	return cc.Do(r)
@@ -396,7 +396,13 @@ func complete(ct curlTemplate, args []Arg) curlTemplate {
 	}
 
 	for _, a := range args {
-		a.applyTo(&ct)
+		err := a.applyTo(&ct)
+
+		if err != nil {
+			ct.error = err
+
+			return ct
+		}
 	}
 
 	return ct
@@ -587,7 +593,7 @@ func (qp *queryParam) String() string {
 	return url.QueryEscape(qp.name) + "=" + url.QueryEscape(qp.value)
 }
 
-func (f argFunc) applyTo(ct *curlTemplate) bool {
+func (f argFunc) applyTo(ct *curlTemplate) error {
 	return f(ct)
 }
 
