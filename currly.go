@@ -36,7 +36,7 @@ func PathArg(name, value string) Arg {
 			}
 		}
 
-		return fmt.Errorf("failed to bind value '%v' to URL path parameter '%v'", value, name)
+		return fmt.Errorf("currly: URL path parameter '%v' does not exist", name)
 	})
 }
 
@@ -48,7 +48,7 @@ func QueryArg(name, value string) Arg {
 			}
 		}
 
-		return fmt.Errorf("failed to bind value '%v' to URL query parameter '%v'", value, name)
+		return fmt.Errorf("currly: URL query parameter '%v' does not exist", name)
 	})
 }
 
