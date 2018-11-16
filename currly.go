@@ -53,12 +53,12 @@ func QueryArg(name, value string) Arg {
 }
 
 func JSONBodyArg(body interface{}) Arg {
+	var bs []byte
+	var err error
+
 	once := sync.Once{}
 
 	return argFunc(func(ct *curlTemplate) error {
-		var bs []byte
-		var err error
-
 		once.Do(func() { bs, err = json.Marshal(body) })
 
 		if err != nil {
