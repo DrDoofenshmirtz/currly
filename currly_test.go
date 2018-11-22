@@ -12,7 +12,7 @@ import (
 func TestBuildAndCallCurlWithSimpleURL(t *testing.T) {
 	var req *http.Request
 
-	c := connectorFunc(func(r *http.Request) (*http.Response, error) {
+	con := connectorFunc(func(r *http.Request) (*http.Response, error) {
 		req = r
 		resp := &http.Response{
 			StatusCode: http.StatusOK,
@@ -23,13 +23,13 @@ func TestBuildAndCallCurlWithSimpleURL(t *testing.T) {
 
 		return resp, nil
 	})
-	curl, err := currly.Builder(c).GET().HTTPS().Localhost().Port(17500).Build()
+	curl, err := currly.Builder().GET().HTTPS().Localhost().Port(17500).Build()
 
 	if err != nil {
 		t.Fatalf("Building the cURL function returned an unexpected error: %v", err)
 	}
 
-	sc, res, err := curl()
+	sc, res, err := curl(con)
 
 	if err != nil {
 		t.Fatalf("Calling the cURL function returned an unexpected error: %v", err)

@@ -24,8 +24,8 @@ func DefaultConnector() Connector {
 	return ClientConnector(c)
 }
 
-func Builder(c Connector) DefineMethod {
-	return curlTemplate{connector: c}
+func Builder() DefineMethod {
+	return curlTemplate{}
 }
 
 func PathArg(name, value string) Arg {
@@ -182,7 +182,7 @@ type BuildCurl interface {
 	curlFuncPart
 }
 
-type CurlFunc func(args ...Arg) (int, interface{}, error)
+type CurlFunc func(con Connector, args ...Arg) (int, interface{}, error)
 
 type Arg interface {
 	applyTo(ct *curlTemplate) error
@@ -232,7 +232,6 @@ type variable interface {
 }
 
 type curlTemplate struct {
-	connector       Connector
 	method          string
 	urlTemplate     urlTemplate
 	header          http.Header
@@ -417,7 +416,7 @@ func (ct curlTemplate) Build() (CurlFunc, error) {
 		return nil, ct.error
 	}
 
-	return CurlFunc(func(args ...Arg) (int, interface{}, error) {
+	return CurlFunc(func(con Connector, args ...Arg) (int, interface{}, error) {
 		ct = complete(ct, args)
 
 		if ct.error != nil {
@@ -430,7 +429,7 @@ func (ct curlTemplate) Build() (CurlFunc, error) {
 			return 0, nil, err
 		}
 
-		resp, err := ct.connector.Send(req)
+		resp, err := con.Send(req)
 
 		if err != nil {
 			return 0, nil, err

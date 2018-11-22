@@ -9,7 +9,7 @@ import (
 
 func main() {
 	curl, err := currly.
-		Builder(currly.DefaultConnector()).
+		Builder().
 		POST().
 		HTTPS().
 		Host("jsonplaceholder.typicode.com").
@@ -29,8 +29,9 @@ func main() {
 		"body":   "Hello, currly.",
 		"userId": 42,
 	}
+	con := currly.DefaultConnector()
 	arg := currly.JSONBodyArg(body)
-	status, res, err := curl(arg)
+	sc, res, err := curl(con, arg)
 
 	if err != nil {
 		fmt.Println(err)
@@ -40,6 +41,6 @@ func main() {
 		return
 	}
 
-	fmt.Println(status)
+	fmt.Println(sc)
 	fmt.Println(res)
 }
