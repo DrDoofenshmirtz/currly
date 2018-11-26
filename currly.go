@@ -84,6 +84,10 @@ func JSONStringExtractor() ResultExtractor {
 			return nil, err
 		}
 
+		if len(bs) <= 0 {
+			return "", nil
+		}
+
 		buf := new(bytes.Buffer)
 		err = json.Indent(buf, bs, "", "  ")
 
